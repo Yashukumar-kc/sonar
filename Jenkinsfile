@@ -1,30 +1,27 @@
 pipeline {
     agent { label 'agent01' }
 
-    tools {
-        sonarQubeScanner 'SonarScanner' // Name from Jenkins Global Tool Config
-    }
-
     environment {
         SONAR_PROJECT_KEY = 'sonar'
+        SONAR_AUTH_TOKEN = credentials('sonar-token') // Jenkins credentials ID
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/<your-username>/sonar.git'
+                git branch: 'main', url: 'https://github.com/Yashukumar-kc/sonar.git'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQubeServer') { // Name from Jenkins config
+                withSonarQubeEnv('SonarQubeServer') { // Server name from Jenkins config
                     sh """
-                    sonar-scanner \
+                    ${tool 'SonarScanner'}/bin/sonar-scanner \
                       -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                       -Dsonar.sources=. \
                       -Dsonar.host.url=http://<sonarqube-server>:9000 \
-                      -Dsonar.login=$SONAR_AUTH_TOKEN
+                      -Dsonar.login=${SONAR_AUTH_TOKEN}
                     """
                 }
             }

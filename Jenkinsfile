@@ -1,8 +1,8 @@
 pipeline {
-    agent any
+    agent { label 'agent01' }
 
     tools {
-        sonarQubeScanner 'SonarScanner' // Name from Jenkins global tools
+        sonarQubeScanner 'SonarScanner' // Name from Jenkins Global Tool Config
     }
 
     environment {

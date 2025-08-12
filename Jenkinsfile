@@ -1,36 +1,27 @@
 pipeline {
-    agent { label 'agent01' }
+    agent any
 
     environment {
-        SONAR_PROJECT_KEY = 'sonar'
-        SONAR_AUTH_TOKEN = credentials('sonar-token') // Jenkins credentials ID
+        SONARQUBE_ENV = credentials('sonarqube-token-id') // If using token via credentials
     }
 
     stages {
-        stage('Checkout') {
+        stage('Install Dependencies') {
             steps {
-                git branch: 'main', url: 'https://github.com/Yashukumar-kc/sonar.git'
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests with Coverage') {
+            steps {
+                sh 'npm test'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQubeServer') { // Server name from Jenkins config
-                    sh """
-                    ${tool 'SonarScanner'}/bin/sonar-scanner \
-                      -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=http://172.232.113.72:9000 \
-                      -Dsonar.login=${SONAR_AUTH_TOKEN}
-                    """
-                }
-            }
-        }
-
-        stage("Quality Gate") {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh 'npx sonar-scanner'
                 }
             }
         }

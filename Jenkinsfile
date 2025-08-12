@@ -1,11 +1,18 @@
 pipeline {
-    agent any
+    agent { label 'agent01' }
 
     environment {
-        SONARQUBE_ENV = credentials('sonarqube-token-id') // If using token via credentials
+        SONAR_PROJECT_KEY = 'sonar'
+        SONAR_AUTH_TOKEN = credentials('sonar-token')
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Yashukumar-kc/sonar.git'
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
@@ -14,14 +21,21 @@ pipeline {
 
         stage('Run Tests with Coverage') {
             steps {
-                sh 'npm test'
+                sh 'npm test -- --coverage'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQubeServer') {
-                    sh 'npx sonar-scanner'
+                    sh """
+                    ${tool 'SonarScanner'}/bin/sonar-scanner \
+                      -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                      -Dsonar.sources=. \
+                      -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                      -Dsonar.host.url=http://172.232.113.72:9000 \
+                      -Dsonar.login=${SONAR_AUTH_TOKEN}
+                    """
                 }
             }
         }
